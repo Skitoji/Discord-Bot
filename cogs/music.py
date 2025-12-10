@@ -17,13 +17,17 @@ class Music(commands.Cog):
         # Buscar FFmpeg
         self.ffmpeg_path = self._find_ffmpeg()
         
-        # Opciones para yt-dlp
+        # Opciones para yt-dlp (mejoradas para Replit)
         self.ytdl_options = {
             'format': 'bestaudio/best',
             'noplaylist': True,
             'default_search': 'ytsearch',
             'quiet': True,
             'no_warnings': True,
+            'socket_timeout': 30,
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
         }
         self.ytdl = yt_dlp.YoutubeDL(self.ytdl_options)
     
@@ -106,7 +110,22 @@ class Music(commands.Cog):
         """Buscar en YouTube"""
         try:
             loop = asyncio.get_event_loop()
-            data = await loop.run_in_executor(None, lambda: self.ytdl.extract_info(search, download=False))
+            
+            # Opciones mejoradas para yt-dlp
+            ytdl_options = {
+                'format': 'bestaudio/best',
+                'noplaylist': True,
+                'default_search': 'ytsearch',
+                'quiet': True,
+                'no_warnings': True,
+                'socket_timeout': 30,
+                'http_headers': {
+                    'User-Agent': 'Mozilla/5.0'
+                }
+            }
+            
+            ytdl = yt_dlp.YoutubeDL(ytdl_options)
+            data = await loop.run_in_executor(None, lambda: ytdl.extract_info(search, download=False))
             
             if 'entries' in data:
                 data = data['entries'][0]
@@ -118,6 +137,7 @@ class Music(commands.Cog):
                 'thumbnail': data.get('thumbnail', '')
             }
         except Exception as e:
+            print(f"Error buscando: {search} - {e}")
             return None
     
     async def play_audio(self, ctx, url, title):
