@@ -262,22 +262,6 @@ class Music(commands.Cog):
             await ctx.send("❌ No hay música")
     
     @commands.command()
-    async def queue(self, ctx):
-        """Ver cola"""
-        if not self.queue:
-            await ctx.send("📭 Cola vacía")
-            return
-        
-        embed = discord.Embed(title="🎵 Cola", color=discord.Color.blurple())
-        for i, song in enumerate(list(self.queue)[:10], 1):
-            embed.add_field(name=f"#{i}", value=song['title'], inline=False)
-        
-        if len(self.queue) > 10:
-            embed.set_footer(text=f"... y {len(self.queue) - 10} más")
-        
-        await ctx.send(embed=embed)
-    
-    @commands.command()
     async def disconnect(self, ctx):
         """Desconectar"""
         if ctx.voice_client:
@@ -287,22 +271,6 @@ class Music(commands.Cog):
             await ctx.send("👋 Desconectado")
         else:
             await ctx.send("❌ No estoy en un canal")
-    
-    @commands.command()
-    async def nowplaying(self, ctx):
-        """Ver qué está sonando"""
-        if ctx.voice_client and ctx.voice_client.is_playing():
-            if hasattr(self, 'current_song'):
-                embed = discord.Embed(
-                    title="🎵 Reproduciendo",
-                    description=self.current_song['title'],
-                    color=discord.Color.blue()
-                )
-                await ctx.send(embed=embed)
-            else:
-                await ctx.send("🎵 Reproduciendo música...")
-        else:
-            await ctx.send("❌ No hay música")
     
     @commands.command()
     async def queue(self, ctx):
@@ -327,6 +295,22 @@ class Music(commands.Cog):
             embed.set_footer(text=f"+{len(self.queue) - 10} canciones más")
         
         await ctx.send(embed=embed)
+    
+    @commands.command()
+    async def nowplaying(self, ctx):
+        """Ver qué está sonando"""
+        if ctx.voice_client and ctx.voice_client.is_playing():
+            if hasattr(self, 'current_song'):
+                embed = discord.Embed(
+                    title="🎵 Reproduciendo",
+                    description=self.current_song['title'],
+                    color=discord.Color.blue()
+                )
+                await ctx.send(embed=embed)
+            else:
+                await ctx.send("🎵 Reproduciendo música...")
+        else:
+            await ctx.send("❌ No hay música")
     
     @commands.command()
     async def loop(self, ctx):
