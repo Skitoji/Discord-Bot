@@ -107,37 +107,46 @@ class Music(commands.Cog):
             return None
     
     async def get_audio_url(self, search):
-        """Buscar en YouTube"""
+        """Buscar en YouTube - Optimizado para Replit"""
         try:
             loop = asyncio.get_event_loop()
             
-            # Opciones mejoradas para yt-dlp
+            # Opciones mínimas pero funcionales
             ytdl_options = {
-                'format': 'bestaudio/best',
+                'format': 'worstvideo+bestaudio/best',
                 'noplaylist': True,
                 'default_search': 'ytsearch',
-                'quiet': True,
-                'no_warnings': True,
-                'socket_timeout': 30,
-                'http_headers': {
-                    'User-Agent': 'Mozilla/5.0'
-                }
+                'quiet': False,  # Mostrar errores
+                'no_warnings': False,
             }
             
             ytdl = yt_dlp.YoutubeDL(ytdl_options)
+            
+            # Buscar en YouTube
+            print(f"🔍 Buscando: {search}")
             data = await loop.run_in_executor(None, lambda: ytdl.extract_info(search, download=False))
+            
+            if not data:
+                print(f"❌ Sin datos para: {search}")
+                return None
             
             if 'entries' in data:
                 data = data['entries'][0]
             
+            url = data.get('url')
+            if not url:
+                print(f"❌ Sin URL para: {search}")
+                return None
+            
             return {
-                'url': data['url'],
+                'url': url,
                 'title': data.get('title', 'Canción desconocida'),
                 'duration': data.get('duration', 0),
                 'thumbnail': data.get('thumbnail', '')
             }
         except Exception as e:
-            print(f"Error buscando: {search} - {e}")
+            print(f"❌ Error en búsqueda: {search}")
+            print(f"   Detalle: {str(e)}")
             return None
     
     async def play_audio(self, ctx, url, title):
@@ -156,11 +165,14 @@ class Music(commands.Cog):
             if ctx.voice_client is None or not ctx.voice_client.is_connected():
                 await channel.connect()
             
-            audio_source = discord.FFmpegPCMAudio(
+            # Usar FFmpegOpusAudio para mejor compatibilidad en Replit
+            before_options = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 10 -nostdin -hide_banner -loglevel error"
+            options = "-vn -acodec libopus -ar 48000 -ac 2 -b:a 128k"
+            
+            audio_source = discord.FFmpegOpusAudio(
                 url,
-                executable=self.ffmpeg_path,
-                before_options="-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
-                options="-vn"
+                before_options=before_options,
+                options=options
             )
             
             if not ctx.voice_client.is_playing():
