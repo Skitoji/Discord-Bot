@@ -17,14 +17,16 @@ class Music(commands.Cog):
         # Buscar FFmpeg
         self.ffmpeg_path = self._find_ffmpeg()
         
-        # Opciones para yt-dlp (mejoradas para Replit)
+        # Opciones para yt-dlp (formato 18 = MP4 sin descifrado requerido)
         self.ytdl_options = {
-            'format': 'bestaudio/best',
+            'format': '18/best[ext=mp4]/best',
             'noplaylist': True,
             'default_search': 'ytsearch',
-            'quiet': True,
-            'no_warnings': True,
+            'quiet': False,
+            'no_warnings': False,
             'socket_timeout': 30,
+            'skip_unavailable_fragments': True,
+            'fragment_retries': 3,
             'http_headers': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
@@ -107,36 +109,45 @@ class Music(commands.Cog):
             return None
     
     async def get_audio_url(self, search):
-        """Buscar en YouTube - Optimizado para Replit"""
+        """Buscar en YouTube - Usando formato 18 (MP4 sin descifrado)"""
         try:
             loop = asyncio.get_event_loop()
             
-            # Opciones mínimas pero funcionales
+            print(f"🔍 Buscando: {search}")
+            
+            # Opciones para obtener formato 18 (MP4 sin necesidad de descifrado de JS)
             ytdl_options = {
-                'format': 'worstvideo+bestaudio/best',
+                'format': '18/best[ext=mp4]/best[ext=webm]',
                 'noplaylist': True,
                 'default_search': 'ytsearch',
-                'quiet': False,  # Mostrar errores
+                'quiet': False,
                 'no_warnings': False,
+                'socket_timeout': 30,
+                'skip_unavailable_fragments': True,
+                'fragment_retries': 3,
+                'http_headers': {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
             }
             
             ytdl = yt_dlp.YoutubeDL(ytdl_options)
             
-            # Buscar en YouTube
-            print(f"🔍 Buscando: {search}")
+            # Una sola búsqueda
             data = await loop.run_in_executor(None, lambda: ytdl.extract_info(search, download=False))
             
             if not data:
-                print(f"❌ Sin datos para: {search}")
                 return None
             
             if 'entries' in data:
                 data = data['entries'][0]
             
+            # Buscar URL válida
             url = data.get('url')
+            
             if not url:
-                print(f"❌ Sin URL para: {search}")
                 return None
+            
+            print(f"✅ Encontrada: {data.get('title', 'Canción desconocida')}")
             
             return {
                 'url': url,
@@ -145,8 +156,7 @@ class Music(commands.Cog):
                 'thumbnail': data.get('thumbnail', '')
             }
         except Exception as e:
-            print(f"❌ Error en búsqueda: {search}")
-            print(f"   Detalle: {str(e)}")
+            print(f"❌ Error en búsqueda: {search} - {str(e)[:100]}")
             return None
     
     async def play_audio(self, ctx, url, title):
@@ -171,6 +181,7 @@ class Music(commands.Cog):
             
             audio_source = discord.FFmpegOpusAudio(
                 url,
+                executable=self.ffmpeg_path,
                 before_options=before_options,
                 options=options
             )
@@ -276,6 +287,56 @@ class Music(commands.Cog):
             await ctx.send("👋 Desconectado")
         else:
             await ctx.send("❌ No estoy en un canal")
+    
+    @commands.command()
+    async def nowplaying(self, ctx):
+        """Ver qué está sonando"""
+        if ctx.voice_client and ctx.voice_client.is_playing():
+            if hasattr(self, 'current_song'):
+                embed = discord.Embed(
+                    title="🎵 Reproduciendo",
+                    description=self.current_song['title'],
+                    color=discord.Color.blue()
+                )
+                await ctx.send(embed=embed)
+            else:
+                await ctx.send("🎵 Reproduciendo música...")
+        else:
+            await ctx.send("❌ No hay música")
+    
+    @commands.command()
+    async def queue(self, ctx):
+        """Ver cola de canciones"""
+        if not self.queue:
+            await ctx.send("📭 Cola vacía")
+            return
+        
+        embed = discord.Embed(
+            title="🎵 Cola de reproducción",
+            color=discord.Color.blue()
+        )
+        
+        for i, song in enumerate(list(self.queue)[:10], 1):
+            embed.add_field(
+                name=f"{i}. {song['title'][:50]}",
+                value=f"Duración: {song.get('duration', 'N/A')}s",
+                inline=False
+            )
+        
+        if len(self.queue) > 10:
+            embed.set_footer(text=f"+{len(self.queue) - 10} canciones más")
+        
+        await ctx.send(embed=embed)
+    
+    @commands.command()
+    async def loop(self, ctx):
+        """Repetir canción/cola"""
+        if not hasattr(self, 'loop_enabled'):
+            self.loop_enabled = False
+        
+        self.loop_enabled = not self.loop_enabled
+        status = "🔄 Loop ACTIVADO" if self.loop_enabled else "❌ Loop desactivado"
+        await ctx.send(status)
 
 async def setup(bot):
     await bot.add_cog(Music(bot))
