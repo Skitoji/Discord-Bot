@@ -75,38 +75,28 @@ class Music(commands.Cog):
     async def get_spotify_info(self, url):
         """Extraer información de Spotify"""
         try:
-            try:
-                response = requests.get(url, timeout=5)
-                title_match = re.search(r'og:title" content="([^"]+)"', response.text)
-                if title_match:
-                    title = title_match.group(1)
-                    audio = await self.get_audio_url(title)
-                    if audio:
-                        return audio
-            except:
-                pass
-            audio = await self.get_audio_url(url)
-            return audio
-        except Exception as e:
-            return None
+            response = requests.get(url, timeout=5)
+            title_match = re.search(r'og:title" content="([^"]+)"', response.text)
+            if title_match:
+                title = title_match.group(1)
+                return await self.get_audio_url(title)
+        except:
+            pass
+        # Si falla, intentar directo
+        return await self.get_audio_url(url)
     
     async def get_apple_music_info(self, url):
         """Extraer información de Apple Music"""
         try:
-            try:
-                response = requests.get(url, timeout=5)
-                title_match = re.search(r'og:title" content="([^"]+)"', response.text)
-                if title_match:
-                    title = title_match.group(1)
-                    audio = await self.get_audio_url(title)
-                    if audio:
-                        return audio
-            except:
-                pass
-            audio = await self.get_audio_url(url)
-            return audio
-        except Exception as e:
-            return None
+            response = requests.get(url, timeout=5)
+            title_match = re.search(r'og:title" content="([^"]+)"', response.text)
+            if title_match:
+                title = title_match.group(1)
+                return await self.get_audio_url(title)
+        except:
+            pass
+        # Si falla, intentar directo
+        return await self.get_audio_url(url)
     
     async def get_audio_url(self, search):
         """Buscar en YouTube - Usando formato 18 (MP4 sin descifrado)"""
