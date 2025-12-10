@@ -195,6 +195,19 @@ class Economy(commands.Cog):
                 pass
         
         await ctx.send(embed=embed)
+    
+    @commands.command()
+    @commands.is_owner()
+    async def addcoins(self, ctx, user: discord.Member, amount: int):
+        """Agregar coins a un usuario (Solo owner)"""
+        if amount < 0:
+            await ctx.send("❌ Monto inválido")
+            return
+        
+        current = self.get_balance(user.id)
+        self.set_balance(user.id, current + amount)
+        
+        await ctx.send(f"✅ Agregaste **{amount}** coins a {user.mention}\nNuevo balance: {current + amount}")
 
 async def setup(bot):
     await bot.add_cog(Economy(bot))
