@@ -33,10 +33,12 @@ bot.config = config
 
 # Cargar automáticamente todos los cogs
 async def load_cogs():
-    for file in os.listdir("./cogs"):
-        if file.endswith(".py"):
+    cogs_dir = "./cogs"
+    for file in os.listdir(cogs_dir):
+        if file.endswith(".py") and not file.startswith("__"):
             try:
-                await bot.load_extension(f"cogs.{file[:-3]}")
+                cog_name = file[:-3]
+                await bot.load_extension(f"cogs.{cog_name}")
                 print(f"⚙ Cog cargado → {file}")
             except Exception as e:
                 print(f"❌ Error cargando {file}: {e}")
