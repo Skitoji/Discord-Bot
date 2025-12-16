@@ -1,4 +1,4 @@
-# 🤖 Discord Bot "Nekotina Remake"
+# 🤖 Discord Bot "Cacorrito"
 
 Un bot de Discord moderno y multifuncional escrito en Python usando `discord.py`. Incluye sistemas de música, economía, niveles, moderación y un dashboard de configuración interactivo.
 
